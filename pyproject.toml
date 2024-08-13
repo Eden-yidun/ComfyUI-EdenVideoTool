@@ -1,0 +1,14 @@
+[project]
+name = "comfyui-EdenTool"
+description = "Nodes related to video workflows"
+version = "1.0.0"
+license = "LICENSE"
+dependencies = ["opencv-python", "imageio-ffmpeg"]
+
+[project.urls]
+Repository = "https://github.com/"
+
+[tool.comfy]
+PublisherId = "Eden"
+DisplayName = "ComfyUI-EdenTool"
+Icon = ""
