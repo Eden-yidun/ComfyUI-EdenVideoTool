@@ -1,13 +1,14 @@
 import subprocess # 用于执行ffmpeg命令
 from pathlib import Path # 用于处理路径
-import os
-
+import os # 用于处理文件
+import io  # 用于处理文件
+import numpy as np # 用于处理数组
 from numpy import tensordot # 用于处理文件和目录
-import folder_paths
-import torchaudio
+import torchaudio # 用于处理音频文件
 from PIL import Image # 用于读取图像文件的Pillow库
+import folder_paths # 用于获取路径
 
-class EdenVideoTool: # 类名
+class Image_to_video: # 类名
  
     # 初始化方法
     def __init__(self): 
@@ -39,7 +40,7 @@ class EdenVideoTool: # 类名
                 }
         }
 
-    RETURN_TYPES = ("STRING","STRING")  # 输出元组中每个元素的类型。输出类型，决定节点右侧的输出参数类型
+    RETURN_TYPES = ("STRING","STRING",)  # 输出元组中每个元素的类型。输出类型，决定节点右侧的输出参数类型
     
     RETURN_NAMES = ("image_path","output_path",)  # 可选：输出元组中每个输出的名称。节点右侧的输出名称
 
@@ -139,15 +140,10 @@ class EdenVideoTool: # 类名
     #@classmethod
     #def IS_CHANGED(s, image, string_field, int_field, float_field, print_to_screen):    # 可选方法，用于控制节点何时重新执行。输入不变的情况下，强制执行。
     #    return ""
-
-
-
-
-
 # 设置 web 目录，该目录中的任何 .js 文件都将作为前端扩展加载
 # WEB_DIRECTORY = "./somejs"
 
-
+'''
 # 使用路由添加自定义 API 路由
 from aiohttp import web
 from server import PromptServer
@@ -160,10 +156,12 @@ async def get_hello(request):
 # 一个包含所有要导出的节点的字典
 # 注意：名称应全局唯一
 NODE_CLASS_MAPPINGS = {
-    "序列帧转视频 image to videol": EdenVideoTool # 节点的类名
+    "Eden_image to video": Image_to_video ,# 节点的类名
+
 }
 
 # 一个包含节点友好/人类可读标题的字典
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "EdenVideoTool": "序列帧转视频 image to video"  # 节点的显示名称
+    "Eden_image to video": "序列帧转视频 image to video", # 搜索节点名称 : 节点块上方显示名称
 }
+'''
