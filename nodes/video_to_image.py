@@ -16,24 +16,16 @@ class Video_to_image: # 类名
     
     @classmethod  # 类方法,@classmethod 在 Python 中用于定义类方法，这些方法可以通过类本身调用，而不需要实例化对象。
     def INPUT_TYPES(s):  # 告诉主程序节点的输入参数。输入类型，决定节点左侧的输入参数类型
-        video_extensions = ['webm', 'mp4', 'mkv', 'gif'] # 支持的视频格式
-        input_dir = folder_paths.get_input_directory() # 获取输入目录
-        files = [] # 存放输入目录中的视频文件
-        for f in os.listdir(input_dir):
-            if os.path.isfile(os.path.join(input_dir, f)):
-                file_parts = f.split('.')
-                if len(file_parts) > 1 and (file_parts[-1] in video_extensions):
-                    files.append(f)
         return {
             "required": { 
-                "video_path": ("STRING", {"default": "X://path/to/video.mp4",}), # 一个输入参数，输入为字符串，且有默认值
-                "output_path": ("STRING", {"default": "X://path/to/output",}),
+                "video_path": ("STRING", {"default":"X://path/to/video.mp4",}), # 一个输入参数，输入为字符串，且有默认值
+                "output_path": ("STRING", {"default":"X://path/to/output",}),
             },
         }
 
-    RETURN_TYPES = ("STRING","INT","INT",)  # 输出元组中每个元素的类型。输出类型，决定节点右侧的输出参数类型
+    RETURN_TYPES = ("STRING","STRING","INT","FLOAT",)  # 输出元组中每个元素的类型。输出类型，决定节点右侧的输出参数类型
     
-    RETURN_NAMES = ("output_path","frame_rate","total_frames")  # 可选：输出元组中每个输出的名称。节点右侧的输出名称
+    RETURN_NAMES = ("frames_path","audio_path","total_frames","fps",)  # 可选：输出元组中每个输出的名称。节点右侧的输出名称
 
     FUNCTION = "video_to_image" # 核心功能 ！！！ 函数入口，本质上是对输入的数据进行处理，并返回处理后的结果，再将其传给下一个节点。  要与属性 def后的函数名 名称 保持一致。入口点方法的名称。例如，如果 `FUNCTION = "execute"`，那么它将运行 Example().execute()
 
@@ -46,46 +38,40 @@ class Video_to_image: # 类名
     def video_to_image(self, video_path,output_path):
         
         # 提取音频
-        audio_output_dir = os.path.join(output_path, 'audio')
-        os.makedirs(audio_output_dir, exist_ok=True)
-        audio_file = os.path.join(audio_output_dir, 'audio.mp3')
-        command = [
+        audio_path = os.path.join(output_path, 'audio.mp3')
+        audio_cmd = [
             'ffmpeg', '-i', video_path, 
-            '-q:a', '0', '-map', 'a', audio_file
+            '-q:a', '0', '-map', 'a','-y', audio_path
         ]
-        subprocess.run(command)
-
-        # 获取总帧数信息
-        command = [
-            'ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=nb_frames', '-of', 'default=nokey=1:noprint_wrappers=1', video_path
-        ]
-        result = subprocess.run(command, capture_output=True, text=True)
-        total_frames_str = result.stdout.strip()
-
-        # 处理总帧数信息
-        try:
-            total_frames = int(total_frames_str)
-        except ValueError:
-            raise ValueError("无法从 ffprobe 输出中获取总帧数信息")
-
-        print(f"总帧数: {total_frames}")
+        subprocess.run(audio_cmd)
 
         # 获取帧率信息
-        command = [
-            'ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'default=nokey=1:noprint_wrappers=1', video_path
+        frame_rate_cmd = [
+            'ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'default=nokey=1:noprint_wrappers=1', str(video_path)
         ]
-        result = subprocess.run(command, capture_output=True, text=True)
-        frame_rate_str = result.stdout.strip()
+        frame_rate_result = subprocess.run(frame_rate_cmd, capture_output=True, text=True)
+        if frame_rate_result.returncode != 0:
+            print(f"Error: {frame_rate_result.stderr}")
+        else:
+            frame_rate_str = frame_rate_result.stdout.strip()
+
+
+        # 获取时长信息
+        duration_cmd = [
+            'ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=duration', '-of', 'default=nokey=1:noprint_wrappers=1', str(video_path)
+        ]
+        duration_result = subprocess.run(duration_cmd, capture_output=True, text=True)
+        duration_str = duration_result.stdout.strip()
 
         # 处理帧率信息
-        frame_rate = None
+        fps = None
         if frame_rate_str:
             frame_rate_parts = frame_rate_str.split('/')
             if len(frame_rate_parts) == 2:
                 try:
                     numerator = int(frame_rate_parts[0])
                     denominator = int(frame_rate_parts[1])
-                    frame_rate = numerator / denominator
+                    fps = numerator / denominator
                 except ValueError:
                     print("无法解析帧率信息")
             else:
@@ -93,16 +79,38 @@ class Video_to_image: # 类名
         else:
             print("无法获取帧率信息")
 
+        # 处理时长信息
+        duration = None
+        if duration_str:
+            try:
+                duration = float(duration_str)
+            except ValueError:
+                print("无法解析时长信息")
+        else:
+            print("无法获取时长信息")
+
+        # 计算总帧数
+        total_frames = None
+        if fps and duration:
+            total_frames = int(fps * duration)
+
         # 提取帧
-        frames_output_dir = os.path.join(output_path, 'frames')
-        os.makedirs(frames_output_dir, exist_ok=True)
+        frames_path = os.path.join(output_path, 'frames')
+        os.makedirs(frames_path, exist_ok=True)
         command = [
             'ffmpeg', '-i', video_path,  # 输入视频路径
-            os.path.join(frames_output_dir, 'frame_%04d.png')  # 输出帧路径
+            os.path.join(frames_path, 'frame_%04d.png')  # 输出帧路径
         ]
         subprocess.run(command) 
+
+        # 打印信息
+        print(f"序列帧图片输出路径 Frames output directory: {frames_path}")
+        print(f"音频输出路径 Audio file: {audio_path}")   
+        print(f"总帧数 Total frames: {total_frames}")
+        print(f"帧率 Frame rate: {fps}")
+
         
-        return (output_path,frame_rate,total_frames)   # 对返回值有要求，return (xx)必须与 RETURN_TYPES 对应，否则会报错。
+        return (frames_path,audio_path,total_frames,fps)   # 对返回值有要求，return (xx)必须与 RETURN_TYPES 对应，否则会报错。
     
 
 

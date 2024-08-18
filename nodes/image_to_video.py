@@ -8,6 +8,8 @@ import torchaudio # 用于处理音频文件
 from PIL import Image # 用于读取图像文件的Pillow库
 import folder_paths # 用于获取路径
 
+
+
 class Image_to_video: # 类名
  
     # 初始化方法
@@ -19,7 +21,7 @@ class Image_to_video: # 类名
         return {
             "required": { 
                 "image_path": ("STRING", {"default": "X://path/to/images",}), # 一个输入参数，输入为字符串，且有默认值
-                "fps": ("INT", {
+                "fps": ("FLOAT", {
                     "default": 30, 
                     "min": 1, # 最小值
                     "max": 2048, # 最大值
@@ -36,7 +38,7 @@ class Image_to_video: # 类名
                 }),
             },
             "optional":{
-                "audio":("AUDIO",),
+                "audio_path":("STRING",{"default": "X://path/to/audio.mp3",}),
                 }
         }
 
@@ -52,31 +54,28 @@ class Image_to_video: # 类名
 
     
 
-    def image_to_video(self,image_path,fps,video_name,output_path,audio=None):
+    def image_to_video(self,image_path,fps,video_name,output_path,audio_path=None):
+        
+        output_path =  f"{output_path}\{video_name}.mp4" # 将输出目录和输出文件名合并为一个输出路径
+        
         # 获取输入目录中的所有图像文件
         image_path = Path(image_path)
         image_files = sorted(image_path.glob('*.png')) + sorted(image_path.glob('*.PNG')) + sorted(image_path.glob('*.Png'))
-        output_path =  f"{output_path}\{video_name}.mp4" # 将用户填入的，分开的输出目录和输出文件名合并为一个输出路径
 
         if not image_files:
             print(f"Files in directory: {os.listdir(image_path)}")
             raise FileNotFoundError(f"No image files found in directory: {image_path}")
-        
+
         # 获取第一张图像的尺寸
         with Image.open(image_files[0]) as img:
             width, height = img.size
             scale = f'{width}:{height}'
-            
-        # 如果尺寸大于1920x1080，则缩放至1920x1080，否则保持原尺寸
-        if width > 1920 or height > 1080:
-            scale = '1920:1080'
-        
+
         # 构建ffmpeg命令
         ffmpeg_cmd = [
             'ffmpeg',
             '-framerate', str(fps),
-            '-f', 'image2pipe',
-            '-i', 'pipe:',
+            '-i', f'{image_path}/frame_%04d.png',  # 假设图像文件名格式为frame_0001.png, frame_0002.png等
             '-vf', f'scale={scale}',
             '-c:v', 'libx264',
             '-preset', 'medium',
@@ -84,43 +83,21 @@ class Image_to_video: # 类名
             '-pix_fmt', 'yuv420p',
             '-y',
             str(output_path)
-       ]
-        # 音频部分
-        if audio is not None:
-          # 判断是否是 Tensor 类型
-           is_tensor = not isinstance(audio, dict)
-           # print('#判断是否是 Tensor 类型',is_tensor,audio)
-           if not is_tensor and 'waveform' in audio and 'sample_rate' in audio:
-               is_tensor = True
+        ]
 
-           # 如果是 Tensor 类型，将音频转为 WAV 文件 
-           if is_tensor:
-               # 转为 WAV 文件
-               audio_path = f"{output_path}.wav"
-               torchaudio.save(audio_path, audio['waveform'].squeeze(0), audio['sample_rate'])
+        # 添加音频文件
+        if audio_path:
+            ffmpeg_cmd.extend(['-i', str(audio_path), '-c:a', 'aac'])
 
-            # 添加音频文件
-           if audio_path and Path(audio_path).exists():
-               ffmpeg_cmd.extend(['-i', str(audio_path), '-c:a', 'aac'])
+        # 执行ffmpeg命令
+        process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+        stdout, stderr = process.communicate()
+        if process.returncode != 0:
+            print(f"ffmpeg 执行失败，错误信息: {stderr.decode('utf-8')}")
+        else:
+            print(f"视频合成成功: {output_path}")
 
-       # 执行ffmpeg命令
-        process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        try: 
-            # 将图像文件逐个写入ffmpeg进程的标准输入
-            for image_file in image_files:
-                with open(image_file, 'rb') as f:
-                    process.stdin.write(f.read())
-            process.stdin.close()
-
-            stdout, stderr = process.communicate()
-            if process.returncode != 0:
-                print(f"ffmpeg 执行失败，错误信息: {stderr.decode('utf-8')}")
-            else:
-                print(f"视频合成成功: {output_path}")
-        except subprocess.CalledProcessError as e:
-            print(f"Error writing to ffmpeg process: {e.stderr.decode('utf-8')}")       
         
         image_path = str(image_path) # 输出路径为字符串
         
