@@ -36,7 +36,7 @@ ComfyUI is a video tool that handles video-related nodes.
 It mainly uses ffmpeg and does not load all resources at once, which saves memory and prevents the app from crashing when combining long videos.
     
 ## Nodes
-### Convert Sequence Frames to Video
+### image to Video
 * Input: image\_path: Path to the sequence frame image.
 * Input: fps: Set the video frame rate.
 * Input: video\_name: Name of the synthesized video.
@@ -44,7 +44,7 @@ It mainly uses ffmpeg and does not load all resources at once, which saves memor
 * Input: audio\_path: Audio path for the synthesized video (optional).
 * Output: image\_path: Output the path of the input sequence frame image, for further processing.
 * Output: output\_path: Output the path of the synthesized video.
-### Convert Sequence Frames to Video
+### Video to image
 * Input: video\_path: Path to the sequence frame images, synthesize the video (required), (Maximum support up to 1920×1080. It loads one frame at a time, effectively saving memory.)
 * Input: audio\_path: Audio (optional).
 * Input: fps: Frame rate (optional).
