@@ -16,7 +16,7 @@ ComfyUI处理视频相关的节点
 * 输入video_path：通过图片的路径，合成视频，必选，（最大支持到1920×1080。通过一帧一帧加载，有效的节省内存。 ） 
 * 输入audio_path：音频，可选。
 * 输入fps：帧率，可选。  
-* 输出frames_path：序列帧路径。
+* 输出image_path：序列帧路径。
 * 输出audio_path: 音频路径。
 * 输出total_frames: 视频总帧数，整数。
 * 输出fps:视频的帧率，浮点。
@@ -48,7 +48,7 @@ It mainly uses ffmpeg and does not load all resources at once, which saves memor
 * Input: video\_path: Path to the sequence frame images, synthesize the video (required), (Maximum support up to 1920×1080. It loads one frame at a time, effectively saving memory.)
 * Input: audio\_path: Audio (optional).
 * Input: fps: Frame rate (optional).
-* Output: frames\_path: Path to the sequence frame images.
+* Output: image\_path: Path to the sequence frame images.
 * Output: audio\_path: Audio path.
 * Output: total\_frames: Total number of video frames, integer.
 * Output: fps: Video frame rate, floating point. ### ffmpeg
