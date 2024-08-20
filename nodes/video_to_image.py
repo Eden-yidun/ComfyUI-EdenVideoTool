@@ -23,9 +23,9 @@ class Video_to_image: # 类名
             },
         }
 
-    RETURN_TYPES = ("STRING","STRING","INT","FLOAT",)  # 输出元组中每个元素的类型。输出类型，决定节点右侧的输出参数类型
+    RETURN_TYPES = ("STRING","FLOAT","STRING","INT",)  # 输出元组中每个元素的类型。输出类型，决定节点右侧的输出参数类型
     
-    RETURN_NAMES = ("frames_path","audio_path","total_frames","fps",)  # 可选：输出元组中每个输出的名称。节点右侧的输出名称
+    RETURN_NAMES = ("image_path","fps","audio_path","total_frames",)  # 可选：输出元组中每个输出的名称。节点右侧的输出名称
 
     FUNCTION = "video_to_image" # 核心功能 ！！！ 函数入口，本质上是对输入的数据进行处理，并返回处理后的结果，再将其传给下一个节点。  要与属性 def后的函数名 名称 保持一致。入口点方法的名称。例如，如果 `FUNCTION = "execute"`，那么它将运行 Example().execute()
 
@@ -95,22 +95,22 @@ class Video_to_image: # 类名
             total_frames = int(fps * duration)
 
         # 提取帧
-        frames_path = os.path.join(output_path, 'frames')
-        os.makedirs(frames_path, exist_ok=True)
+        image_path = os.path.join(output_path, 'frames')
+        os.makedirs(image_path, exist_ok=True)
         command = [
             'ffmpeg', '-i', video_path,  # 输入视频路径
-            os.path.join(frames_path, 'frame_%04d.png')  # 输出帧路径
+            os.path.join(image_path, 'frame_%04d.png')  # 输出帧路径
         ]
         subprocess.run(command) 
 
         # 打印信息
-        print(f"序列帧图片输出路径 Frames output directory: {frames_path}")
+        print(f"序列帧图片输出路径 Frames output directory: {image_path}")
         print(f"音频输出路径 Audio file: {audio_path}")   
         print(f"总帧数 Total frames: {total_frames}")
         print(f"帧率 Frame rate: {fps}")
 
         
-        return (frames_path,audio_path,total_frames,fps)   # 对返回值有要求，return (xx)必须与 RETURN_TYPES 对应，否则会报错。
+        return (image_path,fps,audio_path,total_frames)   # 对返回值有要求，return (xx)必须与 RETURN_TYPES 对应，否则会报错。
     
 
 
