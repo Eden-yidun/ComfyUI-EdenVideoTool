@@ -44,7 +44,7 @@ It mainly uses ffmpeg and does not load all resources at once, which saves memor
 * Input: audio\_path: Audio path for the synthesized video (optional).
 * Output: image\_path: Output the path of the input sequence frame image, for further processing.
 * Output: output\_path: Output the path of the synthesized video.
-### Video to image
+### video to image
 * Input: video\_path: Path to the sequence frame images, synthesize the video (required), (Maximum support up to 1920×1080. It loads one frame at a time, effectively saving memory.)
 * Input: audio\_path: Audio (optional).
 * Input: fps: Frame rate (optional).
