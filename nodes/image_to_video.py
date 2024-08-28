@@ -7,6 +7,7 @@ from numpy import tensordot # 用于处理文件和目录
 import torchaudio # 用于处理音频文件
 from PIL import Image # 用于读取图像文件的Pillow库
 import folder_paths # 用于获取路径
+import re
 
 
 
@@ -62,6 +63,20 @@ class Image_to_video: # 类名
         image_path = Path(image_path)
         image_files = sorted(image_path.glob('*.png')) + sorted(image_path.glob('*.PNG')) + sorted(image_path.glob('*.Png'))
 
+        
+        # 获取第一张图像的文件名,不要路径
+        image_name = os.path.basename(image_files[0])
+        print(f"第一张图像文件名: {image_name}")
+
+        # 获取图像文件名中的数字个数，包括零
+        num_digits = sum(c.isdigit() for c in image_name)
+        print(f"转换后的图像文件名: {num_digits}")
+
+        # 将图像文件名中的数字替换为%0{num_digits}d，只影响数字，不影响其他字符
+        image_name = re.sub(r'\d+', '%0{}d'.format(num_digits), image_name)
+        print(f"转换后的图像文件名: {image_name}")
+
+        # 构建输出目录
         if not image_files:
             print(f"Files in directory: {os.listdir(image_path)}")
             raise FileNotFoundError(f"No image files found in directory: {image_path}")
@@ -71,32 +86,54 @@ class Image_to_video: # 类名
             width, height = img.size
             scale = f'{width}:{height}'
 
-        # 构建ffmpeg命令
-        ffmpeg_cmd = [
-            'ffmpeg',
-            '-framerate', str(fps),
-            '-i', f'{image_path}/frame_%04d.png',  # 假设图像文件名格式为frame_0001.png, frame_0002.png等
-            '-vf', f'scale={scale}',
-            '-c:v', 'libx264',
-            '-preset', 'medium',
-            '-crf', '28',
-            '-pix_fmt', 'yuv420p',
-            '-y',
-            str(output_path)
-        ]
-
-        # 添加音频文件
         if audio_path:
-            ffmpeg_cmd.extend(['-i', str(audio_path), '-c:a', 'aac'])
+            # 有音频文件，构建ffmpeg命令
+            ffmpeg_cmd = [
+                'ffmpeg',
+                '-framerate', str(fps),
+                '-i', f'{image_path}/{image_name}',
+                '-i', audio_path,  # 添加音频文件路径
+                '-vf', f'scale={scale}',
+                '-c:v', 'libx264',
+                '-preset', 'medium',
+                '-crf', '28',
+                '-pix_fmt', 'yuv420p',
+                '-c:a', 'aac',  # 指定音频编解码器
+                '-shortest',  
+                '-y',
+                str(output_path)
+            ]
+            # 执行ffmpeg命令
+            process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        # 执行ffmpeg命令
-        process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+            if process.returncode != 0:
+                print(f"ffmpeg 执行失败，错误信息: {stderr.decode('utf-8')}")
+            else:
+                print(f"视频合成成功: {output_path}")
 
-        stdout, stderr = process.communicate()
-        if process.returncode != 0:
-            print(f"ffmpeg 执行失败，错误信息: {stderr.decode('utf-8')}")
         else:
-            print(f"视频合成成功: {output_path}")
+            # 无音频文件，构建ffmpeg命令
+            ffmpeg_cmd = [
+                'ffmpeg',
+                '-framerate', str(fps),
+                '-i', f'{image_path}/{image_name}',
+                '-vf', f'scale={scale}',
+                '-c:v', 'libx264',
+                '-preset', 'medium',
+                '-crf', '28',
+                '-pix_fmt', 'yuv420p',
+                '-y',
+                str(output_path)
+            ]
+            # 执行ffmpeg命令
+            process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            stdout, stderr = process.communicate()
+            if process.returncode != 0:
+                print(f"ffmpeg 执行失败，错误信息: {stderr.decode('utf-8')}")
+            else:
+                print(f"视频合成成功: {output_path}")
 
         
         image_path = str(image_path) # 输出路径为字符串
