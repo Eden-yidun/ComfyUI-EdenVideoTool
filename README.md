@@ -24,7 +24,7 @@ ComfyUI处理视频相关的节点
 ## 需求  
 ### ffmpeg
 **ffmpeg下载**： https://ffmpeg.org/download.html    
-**教程**：https://www.bilibili.com/video/BV1FB4y1n7wD/?spm_id_from=333.337.search-card.all.click&vd_source=55056672ae01e053537c956ad64231df
+**教程**：[https://www.bilibili.com/video/BV1FB4y1n7wD/?spm_id_from=333.337.search-card.all.click&vd_source=55056672ae01e053537c956ad64231df](https://www.bilibili.com/video/BV1qw4m1d7hx/?spm_id_from=333.788.recommend_more_video.-1&vd_source=55056672ae01e053537c956ad64231df)
 
  ---
  ---
